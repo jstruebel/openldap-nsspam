@@ -1,0 +1,37 @@
+#!/bin/bash -ex
+install()
+{
+    apt-get update
+    DEBIAN_FRONTEND=noninteractive apt-get -y \
+        -o DPkg::Options::=--force-confdef \
+        -o DPkg::Options::=--force-confold \
+        install $@
+}
+
+LDAP_PASS=turnkey
+LDAP_DOMAIN=example.com
+INITHOOKS=/usr/lib/inithooks
+
+# update openldap inithook scripts
+CONF=$INITHOOKS/bin/openldap-reinit.sh
+
+# create random password for ldap accounts
+sed -i "s|LDAP_PASS_HASH|LDAP_PASS_RAND=`slappasswd -h {ssha} -g`\nLDAP_PASS_HASH|" $CONF
+
+# change default group in pre-populated database
+sed -i "s|cn\=default|cn\=certssl|" $CONF
+sed -i "s|cn: default.*|cn: certssl|" $CONF
+sed -i "s|^gidnumber:.*|gidnumber: 1000|" $CONF
+
+# add nsspam user to pre-populated database
+sed -i "s|ou: Users|ou: Users\n\ndn: cn=nsspam,\$LDAP_BASEDN\ncn: nsspam\nobjectClass: simpleSecurityObject\nobjectClass: organizationalRole\nuserPassword: \$LDAP_PASS_RAND|" $CONF
+
+# update access rules
+sed -i "s|# update phpldapadmin|# add nsspam user to access rules\nldapmodify -Y EXTERNAL -H ldapi:/// <<EOL\ndn: olcDatabase={1}hdb,cn=config\ndelete: olcAccess\nolcAccess: {0}\n-\nadd: olcAccess\nolcAccess: {0}to attrs=userPassword,shadowLastChange by self write by anonymous auth by dn=\"cn=nsspam,\$LDAP_BASEDN\" write by dn=\"cn=admin,\$LDAP_BASEDN\" write by * none\nEOL\n\n# update phpldapadmin|" $CONF
+
+# re-initialize ldap
+$INITHOOKS/bin/openldap.py --domain=$LDAP_DOMAIN --pass=$LDAP_PASS
+
+# remove backup from re-initialization
+rm -rf /var/backups/slapd-
+rm -rf /var/backups/*.ldapdb
