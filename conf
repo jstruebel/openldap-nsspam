@@ -16,7 +16,7 @@ INITHOOKS=/usr/lib/inithooks
 CONF=$INITHOOKS/bin/openldap-reinit.sh
 
 # create random password for ldap accounts
-sed -i "s|^LDAP_PASS_HASH|LDAP_PASS_RAND=\`slappasswd -h {ssha} -g\`\nLDAP_PASS_HASH|" $CONF
+sed -i "s|^LDAP_PASS_HASH|LDAP_PASS_RAND=\`slappasswd -g\`\nLDAP_PASS_HASH|" $CONF
 
 # change default group in pre-populated database
 sed -i "s|cn\=default|cn\=certssl|" $CONF
