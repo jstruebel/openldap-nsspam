@@ -16,7 +16,7 @@ INITHOOKS=/usr/lib/inithooks
 CONF=$INITHOOKS/bin/openldap-reinit.sh
 
 # create random password for ldap accounts
-sed -i "s|LDAP_PASS_HASH|LDAP_PASS_RAND=`slappasswd -h {ssha} -g`\nLDAP_PASS_HASH|" $CONF
+sed -i "s|^LDAP_PASS_HASH|LDAP_PASS_RAND=\`slappasswd -h {ssha} -g\`\nLDAP_PASS_HASH|" $CONF
 
 # change default group in pre-populated database
 sed -i "s|cn\=default|cn\=certssl|" $CONF
@@ -24,7 +24,7 @@ sed -i "s|cn: default.*|cn: certssl|" $CONF
 sed -i "s|^gidnumber:.*|gidnumber: 1000|" $CONF
 
 # add aliases subtree and nsspam user to pre-populated database
-sed -i "s|ou: Users|ou: Users\n\ndn: Aliases,\$LDAP_BASEDN\nobjectclass: organizationalUnit\nobjectclass: top\nou: Aliases\n\ndn: cn=nsspam,\$LDAP_BASEDN\ncn: nsspam\nobjectclass: simpleSecurityObject\nobjectclass: organizationalRole\ndescription: NSS/PAM Access Account\nuserPassword: \$LDAP_PASS_RAND|" $CONF
+sed -i "s|ou: Users|ou: Users\n\ndn: ou=Aliases,\$LDAP_BASEDN\nobjectclass: organizationalUnit\nobjectclass: top\nou: Aliases\n\ndn: cn=nsspam,\$LDAP_BASEDN\ncn: nsspam\nobjectclass: simpleSecurityObject\nobjectclass: organizationalRole\ndescription: NSS/PAM Access Account\nuserPassword: \$LDAP_PASS_RAND|" $CONF
 
 # update access rules
 sed -i "s|# update phpldapadmin|# add nsspam user to access rules\nldapmodify -Y EXTERNAL -H ldapi:/// <<EOL\ndn: olcDatabase={1}hdb,cn=config\ndelete: olcAccess\nolcAccess: {0}\n-\nadd: olcAccess\nolcAccess: {0}to attrs=userPassword,shadowLastChange by self write by anonymous auth by dn=\"cn=nsspam,\$LDAP_BASEDN\" write by dn=\"cn=admin,\$LDAP_BASEDN\" write by * none\nEOL\n\n# update phpldapadmin|" $CONF
