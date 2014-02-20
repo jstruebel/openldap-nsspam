@@ -19,9 +19,9 @@ CONF=$INITHOOKS/bin/openldap-reinit.sh
 sed -i "s|^LDAP_PASS_HASH|LDAP_PASS_RAND=\`slappasswd -g\`\nLDAP_PASS_HASH|" $CONF
 
 # change default group in pre-populated database
-sed -i "s|cn\=default|cn\=certssl|" $CONF
-sed -i "s|cn: default.*|cn: certssl|" $CONF
-sed -i "s|^gidnumber:.*|gidnumber: 1000|" $CONF
+sed -i "s|cn\=default|cn\=users|" $CONF
+sed -i "s|cn: default.*|cn: users|" $CONF
+sed -i "s|^gidnumber:.*|gidnumber: 100|" $CONF
 
 # add aliases subtree and nsspam user to pre-populated database
 sed -i "s|ou: Users|ou: Users\n\ndn: ou=Aliases,\$LDAP_BASEDN\nobjectclass: organizationalUnit\nobjectclass: top\nou: Aliases\n\ndn: cn=nsspam,\$LDAP_BASEDN\ncn: nsspam\nobjectclass: simpleSecurityObject\nobjectclass: organizationalRole\ndescription: NSS/PAM Access Account\nuserPassword: \$LDAP_PASS_RAND|" $CONF
